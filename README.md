@@ -5,15 +5,18 @@ A simple Snake-like game with a twist in 117 lines of F#
 
 Gameplay
 --------
-You move the "snake" around with the arrow keys.
+You move the blue "snake" around with the arrow keys.
 Everytime you turn you add a "mine" that will kill you if you touch it.
 You can wrap around the screen so you only have to watch out for the mines.
+If you touch them, you get to see your final score and then the game starts over.
 
 The objective is to get as high a score as possible by collecting "apples".
 Red apples are worth 1 point and green apples 3 points.
 They don't have any effect except increasing your score which you can see in the topleft corner.
 
 Have fun!
+
+![Image of the gameplay](http://i.imgur.com/5N7F13J.png)
 
 Code
 ----
