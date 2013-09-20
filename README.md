@@ -1,7 +1,9 @@
-turning-snake
-=============
+Did you really need to make that turn?
+======================================
 
 A simple Snake-like game with a twist in 120 lines of F#
+
+*by Andreas From*
 
 Gameplay
 --------
