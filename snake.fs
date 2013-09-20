@@ -57,17 +57,20 @@ let move nw (snake: Snake) =
     else newTail <- Array.append [| newHead |] snake.Tail
     { snake with Tail = newTail; Dir = nw}
 
-let randomApple() =
-    let pos = P(rng.Next(0,WIDTH/SCALE), rng.Next(0, HEIGHT/SCALE))
+let randomApple notHere =
+    let randPos() = P(rng.Next(0,WIDTH/SCALE), rng.Next(0, HEIGHT/SCALE))
+    let mutable pos = randPos()
+    while Option.isSome <| Array.tryFind ((=) pos) notHere
+        do pos <- randPos()
     if rng.Next(0, 10) >= 8
     then {greenApple with Pos = pos} else {redApple with Pos = pos}
 
 let eat apple (snake: Snake) =
     if snake.Head = apple.Pos
-    then (randomApple(), apple.Fun snake) else (apple, snake)
+    then (randomApple snake.Tail, apple.Fun snake) else (apple, snake)
 
 let hit (snake: Snake) =
-    Option.isSome <| Array.tryFind (fun e -> e = snake.Head) snake.Rest
+    Option.isSome <| Array.tryFind ((=) snake.Head) snake.Rest
 
 type myForm() =
     inherit Form()
