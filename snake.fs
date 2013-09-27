@@ -14,13 +14,11 @@ type P(x: int, y: int) =
     member this.Y = y
     static member (+) ((l: P), (r: P)) = P(l.X+r.X, l.Y+r.Y)
 
-type Snake = {Tail: P array; Score: int; Dir: Direction} with
-    member this.Head = this.Tail.[0]
-    member this.Rest = if this.Tail.Length >= 1 then this.Tail.[1..] else [| |]
+type Snake = {Tail: P list; Score: int; Dir: Direction}
 
 type Apple = {Pos: P; Color: Color; Fun: Snake -> Snake}
-let redApple = {Pos = P(15,15); Color = Color.Red
-                Fun = (fun s -> {s with Score = s.Score+1})}
+let redApple =   {Pos = P(15,15); Color = Color.Red
+                  Fun = (fun s -> {s with Score = s.Score+1})}
 let greenApple = {Pos = P(15,15); Color = Color.Green
                   Fun = (fun s -> {s with Score = s.Score+3})}
 
@@ -50,27 +48,28 @@ let wrapScreen (n: P) =
     P(x,y)
 
 let move nw (snake: Snake) =
-    let newHead = snake.Head + (dirToP nw) |> wrapScreen
-    let mutable newTail = snake.Tail
-    if nw = snake.Dir
-    then newTail.[0] <- newHead
-    else newTail <- Array.append [| newHead |] snake.Tail
+    let newHead = List.head snake.Tail + (dirToP nw) |> wrapScreen
+    let newTail = newHead :: if nw = snake.Dir
+                             then List.tail snake.Tail
+                             else snake.Tail
     { snake with Tail = newTail; Dir = nw}
 
 let randomApple notHere =
-    let randPos() = P(rng.Next(0,WIDTH/SCALE), rng.Next(0, HEIGHT/SCALE))
+    let randPos() = P(rng.Next(0, WIDTH/SCALE), rng.Next(0, HEIGHT/SCALE))
     let mutable pos = randPos()
-    while Option.isSome <| Array.tryFind ((=) pos) notHere
+    while Option.isSome <| List.tryFind ((=) pos) notHere
         do pos <- randPos()
     if rng.Next(0, 10) >= 8
-    then {greenApple with Pos = pos} else {redApple with Pos = pos}
+    then {greenApple with Pos = pos}
+    else {redApple with Pos = pos}
 
 let eat apple (snake: Snake) =
-    if snake.Head = apple.Pos
-    then (randomApple snake.Tail, apple.Fun snake) else (apple, snake)
+    if List.head snake.Tail = apple.Pos
+    then (randomApple snake.Tail, apple.Fun snake)
+    else (apple, snake)
 
 let hit (snake: Snake) =
-    Option.isSome <| Array.tryFind ((=) snake.Head) snake.Rest
+    Option.isSome <| (List.tryFind ((=) (List.head snake.Tail)) <| List.tail snake.Tail)
 
 type myForm() =
     inherit Form()
@@ -82,7 +81,8 @@ let gr = form.CreateGraphics()
 let mutable newDir = Right
 let setNewDir (e: KeyEventArgs) =
     let dir = keyToDir e.KeyValue
-    if Option.isSome dir then newDir <- Option.get dir
+    if Option.isSome dir
+    then newDir <- Option.get dir
 
 form.KeyDown |> Observable.add setNewDir
 
@@ -94,10 +94,10 @@ let draw apple (snake: Snake) =
     use font = new Font("Arial", 16.0f)
 
     gr.FillRectangle(opac, 0, 0, WIDTH, HEIGHT)
-    let mines = Array.map (fun (e: P) -> new Rectangle(e.X*SCALE, e.Y*SCALE, SCALE, SCALE)) snake.Tail
-    gr.FillRectangles(black, mines)
+    let mines = List.map (fun (e: P) -> new Rectangle(e.X*SCALE, e.Y*SCALE, SCALE, SCALE)) snake.Tail
+    gr.FillRectangles(black, List.toArray mines)
     gr.FillRectangle(acolor, apple.Pos.X*SCALE, apple.Pos.Y*SCALE, SCALE, SCALE)
-    gr.FillRectangle(blue, snake.Head.X*SCALE, snake.Head.Y*SCALE, SCALE, SCALE)
+    gr.FillRectangle(blue, (List.head snake.Tail).X*SCALE, (List.head snake.Tail).Y*SCALE, SCALE, SCALE)
     gr.DrawString(snake.Score.ToString(), font, black, PointF(0.0f,0.0f))
 
 let rec gameLoop((snake: Snake), apple) = async {
@@ -113,7 +113,7 @@ let rec gameLoop((snake: Snake), apple) = async {
          Application.Restart()
     else return! gameLoop(next, apple) }
 
-let snake = { Tail = [| P(0,0) |]; Score = 0; Dir = newDir }
+let snake = { Tail = [P(0,0)]; Score = 0; Dir = newDir }
 
 [<STAThread>]
 do Async.Start(gameLoop(snake, redApple))
